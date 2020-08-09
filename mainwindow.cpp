@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "qdebug.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -56,7 +57,8 @@ void MainWindow::on_Open_triggered()
         QMessageBox::warning(this,"Error", "Can't setup the model");
         return;
     }
-
+\
+    ui->treeView->setCurrentIndex(QModelIndex());
     setActionsEnabled(true);
 }
 
@@ -86,22 +88,61 @@ void MainWindow::on_Save_As_triggered()
 void MainWindow::on_addDepartment_triggered()
 {
     TreeModel *model = getCurrentTreeModel();
-    model->insertRows(0,1,model->parent(model->index(0,0)));
+    if(!model->insertRows(0,1,model->parent(model->index(0,0))))
+    {
+        QMessageBox::warning(this,"Ошибка","Не удалось добавить департамент");
+    }
 }
 
 void MainWindow::on_deleteDepartment_triggered()
 {
+    QModelIndex selectedIndex = ui->treeView->currentIndex();
+    if(!selectedIndex.isValid() || selectedIndex.parent().isValid())
+    {
+        QMessageBox::warning(this,"Ошибка","Выберите департамент для удаления");
+        return;
+    }
 
+    TreeModel *model = getCurrentTreeModel();
+    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
+    {
+        QMessageBox::warning(this,"Ошибка","Не удалось удалить департамент");
+    }
 }
 
 void MainWindow::on_addEmployment_triggered()
 {
+    QModelIndex selectedIndex = ui->treeView->currentIndex();
 
+    if(!selectedIndex.isValid() || selectedIndex.parent().isValid())
+    {
+        QMessageBox::warning(this,"Ошибка","Выберите департамент для добавления сотрудника");
+        return;
+    }
+
+    TreeModel *model = getCurrentTreeModel();
+    if(!model->insertRows(1,1,selectedIndex))
+    {
+        QMessageBox::warning(this,"Ошибка","Не удалось добавить сотрудника");
+    }
 }
 
 void MainWindow::on_deleteEmployment_triggered()
 {
+    QModelIndex selectedIndex = ui->treeView->currentIndex();
 
+    qDebug() << selectedIndex.isValid() << " " << selectedIndex.parent().isValid() << " " << selectedIndex.parent().parent().isValid();
+    if(!selectedIndex.isValid() || !(selectedIndex.parent().isValid() && !selectedIndex.parent().parent().isValid()))
+    {
+        QMessageBox::warning(this,"Ошибка","Выберите сотрудника для удаления");
+        return;
+    }
+
+    TreeModel *model = getCurrentTreeModel();
+    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
+    {
+        QMessageBox::warning(this,"Ошибка","Не удалось удалить сотрудника");
+    }
 }
 
 void MainWindow::setActionsEnabled(bool isEnabled)

@@ -43,10 +43,18 @@ bool TreeItem::insertChildren(int position, int count, int columns)
     if (position < 0 || position > childItems.size())
         return false;
 
+
     for (int row = 0; row < count; ++row) {
         QVector<QVariant> data(columns);
+        data[0] = "Введите...";
         TreeItem *item = new TreeItem(data, this);
         childItems.insert(position, item);
+    }
+
+    if(this->parent() != nullptr)
+    {
+        this->setData(2,this->data(1).toDouble()*this->data(2).toDouble()/(this->data(1).toDouble()+count));
+        this->setData(1,this->data(1).toInt() + count); //0 - name, 1 - employment amount, 2 - avr salary
     }
 
     return true;
@@ -98,8 +106,19 @@ bool TreeItem::removeChildren(int position, int count)
     if (position < 0 || position + count > childItems.size())
         return false;
 
+    int salarySum = 0;
     for (int row = 0; row < count; ++row)
-        delete childItems.takeAt(position);
+    {
+        TreeItem *childItem = childItems.takeAt(position);
+        salarySum += childItem->data(4).toInt();
+        delete childItem;
+    }
+
+    if(this->parent() != nullptr)
+    {
+        this->setData(2,(this->data(1).toDouble() * this->data(2).toDouble()-salarySum) / (this->data(1).toDouble()-count));
+        this->setData(1,this->data(1).toInt() - count); //0 - name, 1 - employment amount, 2 - avr salary
+    }
 
     return true;
 }

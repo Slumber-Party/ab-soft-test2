@@ -9,9 +9,20 @@
 #include <QUndoStack>
 #include "treeitem.h"
 
+#include "adddepartmentcommand.h"
+#include "addemploymentcommand.h"
+#include "deletedepartmentcommand.h"
+#include "deleteemploymentcommand.h"
+
 class TreeModel : public QAbstractItemModel
 {
     Q_OBJECT
+
+    friend class AddDepartmentCommand;
+    friend class AddEmploymentCommand;
+    friend class DeleteDepartmentCommand;
+    friend class DeleteEmploymentCommand;
+
 public:
     TreeModel(const QStringList &headers, QObject *parent = nullptr);
     ~TreeModel() override;
@@ -42,7 +53,7 @@ public:
                     const QModelIndex &parent = QModelIndex()) override;
 
     bool setupFromXML(const QString &pathToXmlFile);
-    bool saveToXML(const QString &pathToXmlFile = QString());
+    bool saveToXML(QString pathToXmlFile = "");
 
     QUndoStack *undoStack() const;
 private:

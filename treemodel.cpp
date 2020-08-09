@@ -107,8 +107,8 @@ QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent) con
     if (!parentItem)
         return QModelIndex();
 
-    if(parent.isValid() && row == 0)
-        return createIndex(row,column,new TreeItem({"Фамилия","Имя","Отчество","Должность","Зарплата"},parentItem));
+//    if(parent.isValid() && row == 0)
+//        return createIndex(row,column,new TreeItem({"Фамилия","Имя","Отчество","Должность","Зарплата"},parentItem));
 
     TreeItem *childItem = parentItem->child(row);
     if (childItem)
@@ -135,6 +135,11 @@ bool TreeModel::insertRows(int position, int rows, const QModelIndex &parent)
     const bool success = parentItem->insertChildren(position,
                                                     rows,
                                                     rootItem->columnCount());
+    TreeItem *newItem = parentItem->child(position);
+    if(parentItem->parent() == nullptr && newItem->childCount() == 0)
+    {
+        newItem->insertChild(new TreeItem({"Фамилия","Имя","Отчество","Должность","Зарплата"},newItem));
+    }
     endInsertRows();
 
     return success;
@@ -231,6 +236,7 @@ bool TreeModel::setupFromXML(const QString &pathToXmlFile)
             {
                 currentDepItem->setData(1,employments);
                 currentDepItem->setData(2,(double)salarySum/employments);
+                currentDepItem->insertChild(0,new TreeItem({"Фамилия","Имя","Отчество","Должность","Зарплата"},currentDepItem));
 
                 rootItem->insertChild(currentDepItem);
 
@@ -262,8 +268,13 @@ bool TreeModel::setupFromXML(const QString &pathToXmlFile)
     }
 }
 
-bool TreeModel::saveToXML(const QString &pathToXmlFile)
+bool TreeModel::saveToXML(QString pathToXmlFile)
 {
+    if(!pathToXmlFile.endsWith(".xml"))
+    {
+        pathToXmlFile += ".xml";
+    }
+
     if(pathToXmlFile != QString())
     {
         currentPathToXmlFile = pathToXmlFile;
@@ -296,7 +307,7 @@ bool TreeModel::saveToXML(const QString &pathToXmlFile)
         xml.writeAttribute("name",departmentItem->data(0).toString());
         xml.writeStartElement("employments");
 
-        for(int j = 0;j<departmentItem->childCount();j++)
+        for(int j = 1;j<departmentItem->childCount();j++) // j = 0 - header item
         {
             TreeItem *employmentItem = departmentItem->child(j);
 
@@ -341,6 +352,27 @@ bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int rol
         return false;
 
     TreeItem *item = getItem(index);
+
+    if(index.column() == 4 && index.parent().isValid() && !index.parent().parent().isValid())
+    {
+        TreeItem *parent = static_cast<TreeItem*>(index.parent().internalPointer());
+        int salarySum = 0;
+        for(int i = 1;i<parent->childCount();i++)
+        {
+            salarySum += parent->child(i)->data(4).toInt();
+        }
+
+        salarySum-=item->data(4).toInt();
+
+        qDebug() << salarySum << "+" << value.toInt() << "=" << (salarySum + value.toInt()) << "/"
+                 << parent->childCount()-1 << " = " << (salarySum + value.toInt())/(parent->childCount()-1);
+
+        bool result = parent->setData(2,(double)((salarySum + value.toInt())/(parent->childCount()-1)));
+
+        if(result)
+            emit dataChanged(index.parent(),index.parent(),{Qt::DisplayRole, Qt::EditRole});
+    }
+
     bool result = item->setData(index.column(), value);
 
     if (result)
