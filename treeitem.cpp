@@ -71,12 +71,7 @@ bool TreeItem::insertChild(int position,TreeItem *item)
 
 bool TreeItem::insertChild(int position, QVector<QVariant> &data)
 {
-    if (position < 0 || position > childItems.size())
-        return false;
-
-    childItems.insert(position,new TreeItem(data,this));
-
-    return true;
+    return insertChild(position,new TreeItem(data,this));
 }
 
 bool TreeItem::insertColumns(int position, int columns)

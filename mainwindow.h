@@ -26,12 +26,21 @@ private slots:
     void on_Save_triggered();
     
     void on_Save_As_triggered();
-    
-    void on_Undo_triggered();
-    
-    void on_Redo_triggered();
-    
+
+    void on_addDepartment_triggered();
+
+    void on_deleteDepartment_triggered();
+
+    void on_addEmployment_triggered();
+
+    void on_deleteEmployment_triggered();
+
 private:
+    void setActionsEnabled(bool isEnabled);
+    TreeModel *makeNewModel();
+
+    TreeModel *getCurrentTreeModel() const;
+
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

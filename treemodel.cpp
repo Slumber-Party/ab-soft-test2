@@ -9,12 +9,14 @@ TreeModel::TreeModel(const QStringList &headers, QObject *parent)
         rootData << header;
 
     rootItem = new TreeItem(rootData);
-    //setupModelData(data.split('\n'), rootItem);
+
+    undoStack_ = new QUndoStack();
 }
 
 
 TreeModel::~TreeModel()
 {
+    delete undoStack_;
     delete rootItem;
 }
 
@@ -50,7 +52,7 @@ Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
     if(!index.parent().isValid() && index.column() == 0) //если это не поле названия отдела
         item_flags |= Qt::ItemIsEditable;
 
-    if(!index.parent().isValid()) //если это запись об отделе
+    if(!index.parent().isValid() || (index.parent().isValid() && index.row() !=0 )) //если это запись об отделе или сотруднике
         item_flags |= Qt::ItemIsSelectable;
 
     return item_flags;
@@ -66,11 +68,32 @@ TreeItem *TreeModel::getItem(const QModelIndex &index) const
     return rootItem;
 }
 
+QString TreeModel::trHeaderInTag(const QString header) const
+{
+    if(header == "Фамилия")
+        return "surname";
+    if(header == "Имя")
+        return "name";
+    if(header == "Отчество")
+        return "middleName";
+    if(header == "Должность")
+        return "function";
+    if(header == "Зарплата")
+        return "salary";
+
+    return "undefined";
+}
+
 QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
                                int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
         return rootItem->data(section);
+
+    if(orientation == Qt::Horizontal && role == Qt::BackgroundColorRole)
+    {
+        return QColor(Qt::darkGray);
+    }
 
     return QVariant();
 }
@@ -156,7 +179,7 @@ bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
     return success;
 }
 
-bool TreeModel::setupFromXML(QString pathToXmlFile)
+bool TreeModel::setupFromXML(const QString &pathToXmlFile)
 {
     QFile xmlFile(pathToXmlFile);
 
@@ -207,7 +230,7 @@ bool TreeModel::setupFromXML(QString pathToXmlFile)
             if(xml.name() == "department")
             {
                 currentDepItem->setData(1,employments);
-                currentDepItem->setData(2,(float)salarySum/employments);
+                currentDepItem->setData(2,(double)salarySum/employments);
 
                 rootItem->insertChild(currentDepItem);
 
@@ -228,9 +251,10 @@ bool TreeModel::setupFromXML(QString pathToXmlFile)
     xml.clear();
     xmlFile.close();
 
-    if(xml.hasError())
+    if(xml.hasError() || rootItem->childCount() == 0) //если нет ни одного департамента
     {
         currentPathToXmlFile = "";
+        return false;
     }
     else
     {
@@ -238,9 +262,70 @@ bool TreeModel::setupFromXML(QString pathToXmlFile)
     }
 }
 
-bool TreeModel::saveToXML(QString pathToXmlFile)
+bool TreeModel::saveToXML(const QString &pathToXmlFile)
 {
-    return true;
+    if(pathToXmlFile != QString())
+    {
+        currentPathToXmlFile = pathToXmlFile;
+    }
+
+    QFile xmlFile(currentPathToXmlFile);
+
+    if(!xmlFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        xmlFile.close();
+        return false;
+    }
+
+    QXmlStreamWriter xml(&xmlFile);
+
+    xml.setAutoFormatting(true);
+    xml.writeStartDocument("1.0");
+
+    xml.writeStartElement("departments");
+
+    //header item всегда один и тот же для всех сотрудников любого департамента, а значит можно взять самый верхний
+    //действие безопасно, т.к гарантируется наличие хотя бы одного департамента
+    TreeItem *headerItem = static_cast<TreeItem*>(index(0,0,index(0,0)).internalPointer());
+
+    for(int i =0;i<rootItem->childCount();i++)
+    {
+        TreeItem *departmentItem = rootItem->child(i);
+
+        xml.writeStartElement("department");
+        xml.writeAttribute("name",departmentItem->data(0).toString());
+        xml.writeStartElement("employments");
+
+        for(int j = 0;j<departmentItem->childCount();j++)
+        {
+            TreeItem *employmentItem = departmentItem->child(j);
+
+            xml.writeStartElement("employment");
+
+            for(int k = 0;k<employmentItem->columnCount();k++)
+            {
+                xml.writeTextElement(trHeaderInTag(headerItem->data(k).toString())
+                                     ,employmentItem->data(k).toString());
+            }
+
+            xml.writeEndElement();
+        }
+
+        xml.writeEndElement();
+        xml.writeEndElement();
+    }
+
+    xml.writeEndElement();
+    xml.writeEndDocument();
+
+    xmlFile.close();
+
+    return !xml.hasError();
+}
+
+QUndoStack *TreeModel::undoStack() const
+{
+    return undoStack_;
 }
 
 int TreeModel::rowCount(const QModelIndex &parent) const

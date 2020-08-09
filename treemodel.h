@@ -6,6 +6,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 #include <QColor>
+#include <QUndoStack>
 #include "treeitem.h"
 
 class TreeModel : public QAbstractItemModel
@@ -40,14 +41,19 @@ public:
     bool removeRows(int position, int rows,
                     const QModelIndex &parent = QModelIndex()) override;
 
-    bool setupFromXML(QString pathToXmlFile);
-    bool saveToXML(QString pathToXmlFile);
+    bool setupFromXML(const QString &pathToXmlFile);
+    bool saveToXML(const QString &pathToXmlFile = QString());
+
+    QUndoStack *undoStack() const;
 private:
     TreeItem *getItem(const QModelIndex &index) const;
+    QString trHeaderInTag(const QString header) const;
 
     TreeItem *rootItem;
 
     QString currentPathToXmlFile;
+
+    QUndoStack *undoStack_;
 };
 
 #endif // TREEMODEL_H
