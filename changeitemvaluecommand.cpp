@@ -68,7 +68,7 @@ void ChangeItemValueCommand::redo()
         {
             TreeItem *parent = model_->rootItem->child(p_row);
 
-            int newAvrValue = (double)(oldAvrValue*parent->childCount()-oldValue.toInt()+newValue.toInt())/parent->childCount();
+            int newAvrValue = (double)(oldAvrValue*(parent->childCount()-1)-oldValue.toInt()+newValue.toInt())/(parent->childCount()-1);
             result = model_->changeData(model_->createIndex(p_row,2,parent),newAvrValue);
         }
     }
