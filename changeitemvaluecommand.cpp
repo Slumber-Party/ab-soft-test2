@@ -31,9 +31,6 @@ ChangeItemValueCommand::ChangeItemValueCommand(const QModelIndex &index, const Q
 
 void ChangeItemValueCommand::undo()
 {
-    //ind не гарантирует иметь валидный указатель на parent => используем только row, column, а parent index получаем через model->index
-    //такое поведение реализовано во всех командах
-    //если же ind изначально не валидный, то передаем его же, т.к он будет равен QModelIndex()
     if(!(p_row>=0 && p_column >=0))
     {
         TreeItem *item = model_->rootItem->child(row);
