@@ -1,6 +1,5 @@
 #include "changeitemvaluecommand.h"
 #include "treemodel.h"
-#include "qdebug.h"
 
 ChangeItemValueCommand::ChangeItemValueCommand(const QModelIndex &index, const QVariant &value, int role, TreeModel *model)
 {

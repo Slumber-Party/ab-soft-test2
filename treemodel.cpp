@@ -1,5 +1,4 @@
 #include "treemodel.h"
-#include <qdebug.h>
 
 TreeModel::TreeModel(const QStringList &headers, QObject *parent)
     : QAbstractItemModel(parent)
@@ -386,7 +385,6 @@ bool TreeModel::changeData(const QModelIndex &index, const QVariant &value, int 
     }
 
     bool result = item->setData(index.column(), value);
-    qDebug() << result << " " << index.column();
 
     if (result)
         emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
