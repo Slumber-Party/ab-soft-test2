@@ -9,12 +9,22 @@ class TreeModel;
 class ChangeItemValueCommand : public QUndoCommand
 {
 public:
-    ChangeItemValueCommand();
+    ChangeItemValueCommand(const QModelIndex &index, const QVariant &value, int role, TreeModel *model);
 
     void undo() override;
     void redo() override;
-private:
 
+    bool getResult() const;
+private:
+    int role_;
+    int p_row,p_column;
+
+    QModelIndex ind;
+    QVariant oldValue,newValue;
+
+    bool result;
+
+    TreeModel *model_;
 };
 
 #endif // CHANGEITEMVALUECOMMAND_H

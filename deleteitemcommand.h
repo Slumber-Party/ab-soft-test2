@@ -5,18 +5,22 @@
 #include <QModelIndex>
 
 class TreeModel;
+class TreeItem;
 
-class ItemCommand : public QUndoCommand
+class DeleteItemCommand : public QUndoCommand
 {
 public:
-    ItemCommand(int position, int rows, const QModelIndex &parent, TreeModel *model, bool isDelete);
-
+    DeleteItemCommand(int position, int rows, const QModelIndex &parent, TreeModel *model);
     void undo() override;
     void redo() override;
 private:
-    int row, p_row;
+    int row;
     int rows_;
-    bool isDelete_;
+
+    int p_row,p_column;
+
+    QVector<QVariant> oldParentData;
+    QVector<TreeItem> children;
 
     TreeModel *model_;
     QModelIndex ind;

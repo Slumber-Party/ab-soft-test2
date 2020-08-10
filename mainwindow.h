@@ -5,10 +5,12 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QFile>
+#include <QKeyEvent>
 
 #include <QUndoStack>
 
-#include "itemcommand.h"
+#include "deleteitemcommand.h"
+#include "additemcommand.h"
 
 #include "treemodel.h"
 
@@ -38,6 +40,8 @@ private slots:
     void on_addEmployment_triggered();
 
     void on_deleteEmployment_triggered();
+
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     void setActionsEnabled(bool isEnabled);

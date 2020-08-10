@@ -8,13 +8,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     undoStack = new QUndoStack();
-    undoStack->setUndoLimit(64);
-    QAction *redo = undoStack->createRedoAction(ui->edit_menu,"Повторить действие");
-    QAction *undo = undoStack->createUndoAction(ui->edit_menu,"Отменить действие");
+    undoStack->setUndoLimit(32);
+    QAction *redo = undoStack->createRedoAction(ui->edit_menu,"Повторить действие (Ctrl + Y) ");
+    QAction *undo = undoStack->createUndoAction(ui->edit_menu,"Отменить действие (Ctrl + Z)");
 
     for(auto action : ui->edit_menu->actions())
     {
-        if(action->text() == "Повторить действие" || action->text() == "Отменить действие")
+        if(action->text() == "Повторить действие (Ctrl + Y) " || action->text() == "Отменить действие (Ctrl + Z)")
         {
             ui->edit_menu->removeAction(action);
         }
@@ -56,8 +56,9 @@ void MainWindow::on_Open_triggered()
         delete model;
     }
 
-    undoStack->setClean();
+    undoStack->clear();
     model = new TreeModel({"Наименование подразделения","Количество сотрудников","Средняя зарплата","",""});
+    model->setUndoStack(undoStack);
 
     if(model->setupFromXML(fileName))
     {
@@ -86,7 +87,7 @@ void MainWindow::on_Save_triggered()
         QMessageBox::warning(this,"Error", "Can't save the model");
     }
 
-    undoStack->setClean();
+    undoStack->clear();
 }
 
 void MainWindow::on_Save_As_triggered()
@@ -100,19 +101,14 @@ void MainWindow::on_Save_As_triggered()
         QMessageBox::warning(this,"Error", "Can't save the model");
     }
 
-    undoStack->setClean();
+    undoStack->clear();
 }
 
 void MainWindow::on_addDepartment_triggered()
 {
     TreeModel *model = getCurrentTreeModel();
 
-    undoStack->push(new ItemCommand(0,1,model->parent(model->index(0,0)),model,false));
-
-//    if(!model->insertRows(0,1,model->parent(model->index(0,0))))
-//    {
-//        QMessageBox::warning(this,"Ошибка","Не удалось добавить департамент");
-//    }
+    undoStack->push(new AddItemCommand(0,1,model->parent(model->index(0,0)),model));
 }
 
 void MainWindow::on_deleteDepartment_triggered()
@@ -125,11 +121,8 @@ void MainWindow::on_deleteDepartment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    undoStack->push(new ItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model,true));
-//    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
-//    {
-//        QMessageBox::warning(this,"Ошибка","Не удалось удалить департамент");
-//    }
+
+    undoStack->push(new DeleteItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model));
 }
 
 void MainWindow::on_addEmployment_triggered()
@@ -143,11 +136,7 @@ void MainWindow::on_addEmployment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    undoStack->push(new ItemCommand(1,1,selectedIndex,model,false));
-//    if(!model->insertRows(1,1,selectedIndex))
-//    {
-//        QMessageBox::warning(this,"Ошибка","Не удалось добавить сотрудника");
-//    }
+    undoStack->push(new AddItemCommand(1,1,selectedIndex,model));
 }
 
 void MainWindow::on_deleteEmployment_triggered()
@@ -162,11 +151,24 @@ void MainWindow::on_deleteEmployment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    undoStack->push(new ItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model,true));
-//    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
-//    {
-//        QMessageBox::warning(this,"Ошибка","Не удалось удалить сотрудника");
-//    }
+    undoStack->push(new DeleteItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model));
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Z && event->modifiers() == Qt::KeyboardModifier::ControlModifier)
+    {
+        if(undoStack->canUndo())
+            undoStack->undo();
+        return;
+    }
+
+    if(event->key() == Qt::Key_Y && event->modifiers() == Qt::KeyboardModifier::ControlModifier)
+    {
+        if(undoStack->canRedo())
+            undoStack->redo();
+        return;
+    }
 }
 
 void MainWindow::setActionsEnabled(bool isEnabled)

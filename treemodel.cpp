@@ -44,7 +44,7 @@ Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
 {
     Qt::ItemFlags item_flags = Qt::ItemIsEnabled;
 
-    if (index.row() != 0 && index.parent().isValid()) //если это вторичный заголовок
+    if (index.row() != 0 && index.parent().isValid()) //если это не вторичный заголовок
         item_flags |= Qt::ItemIsEditable;
     if(!index.parent().isValid() && index.column() == 0) //если это не поле названия отдела
         item_flags |= Qt::ItemIsEditable;
@@ -265,14 +265,14 @@ bool TreeModel::setupFromXML(const QString &pathToXmlFile)
 
 bool TreeModel::saveToXML(QString pathToXmlFile)
 {
-    if(!pathToXmlFile.endsWith(".xml"))
-    {
-        pathToXmlFile += ".xml";
-    }
-
     if(pathToXmlFile != QString())
     {
         currentPathToXmlFile = pathToXmlFile;
+    }
+
+    if(!currentPathToXmlFile.endsWith(".xml"))
+    {
+        currentPathToXmlFile += ".xml";
     }
 
     QFile xmlFile(currentPathToXmlFile);
@@ -289,6 +289,15 @@ bool TreeModel::saveToXML(QString pathToXmlFile)
     xml.writeStartDocument("1.0");
 
     xml.writeStartElement("departments");
+
+    if(rootItem->childCount() == 0)
+    {
+        xml.writeEndElement();
+        xml.writeEndDocument();
+        xmlFile.close();
+
+        return !xml.hasError();
+    }
 
     //header item всегда один и тот же для всех сотрудников любого департамента, а значит можно взять самый верхний
     //действие безопасно, т.к гарантируется наличие хотя бы одного департамента
@@ -346,9 +355,23 @@ bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int rol
     if (role != Qt::EditRole)
         return false;
 
+    if(value == data(index,role).toString())
+        return true;
+
+    ChangeItemValueCommand *cmd = new ChangeItemValueCommand(index,value,role,this);
+    undoStack->push(cmd);
+
+    return cmd->getResult();
+}
+
+bool TreeModel::changeData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (role != Qt::EditRole)
+        return false;
+
     TreeItem *item = getItem(index);
 
-    if(index.column() == 4 && index.parent().isValid() && !index.parent().parent().isValid())
+    if(index.column() == 4 && index.parent().isValid())
     {
         TreeItem *parent = static_cast<TreeItem*>(index.parent().internalPointer());
         int salarySum = 0;

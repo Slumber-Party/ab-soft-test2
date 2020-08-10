@@ -16,16 +16,18 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    additemcommand.cpp \
     changeitemvaluecommand.cpp \
-    itemcommand.cpp \
+    deleteitemcommand.cpp \
     main.cpp \
     mainwindow.cpp \
     treeitem.cpp \
     treemodel.cpp
 
 HEADERS += \
+    additemcommand.h \
     changeitemvaluecommand.h \
-    itemcommand.h \
+    deleteitemcommand.h \
     mainwindow.h \
     treeitem.h \
     treemodel.h
