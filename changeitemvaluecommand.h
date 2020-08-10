@@ -18,9 +18,10 @@ public:
 private:
     int role_;
     int p_row,p_column;
+    int row,column;
 
-    QModelIndex ind;
     QVariant oldValue,newValue;
+    int oldAvrValue;
 
     bool result;
 
