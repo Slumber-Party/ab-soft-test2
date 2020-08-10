@@ -9,14 +9,11 @@ TreeModel::TreeModel(const QStringList &headers, QObject *parent)
         rootData << header;
 
     rootItem = new TreeItem(rootData);
-
-    undoStack_ = new QUndoStack();
 }
 
 
 TreeModel::~TreeModel()
 {
-    delete undoStack_;
     delete rootItem;
 }
 
@@ -128,10 +125,8 @@ bool TreeModel::insertColumns(int position, int columns, const QModelIndex &pare
 bool TreeModel::insertRows(int position, int rows, const QModelIndex &parent)
 {
     TreeItem *parentItem = getItem(parent);
-    if (!parentItem)
-        return false;
 
-    beginInsertRows(parent, position, position + rows - 1);
+    beginInsertRows(parent, position, position);
     const bool success = parentItem->insertChildren(position,
                                                     rows,
                                                     rootItem->columnCount());
@@ -334,9 +329,9 @@ bool TreeModel::saveToXML(QString pathToXmlFile)
     return !xml.hasError();
 }
 
-QUndoStack *TreeModel::undoStack() const
+void TreeModel::setUndoStack(QUndoStack *stack)
 {
-    return undoStack_;
+    undoStack = stack;
 }
 
 int TreeModel::rowCount(const QModelIndex &parent) const

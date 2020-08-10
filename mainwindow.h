@@ -6,6 +6,10 @@
 #include <QFileDialog>
 #include <QFile>
 
+#include <QUndoStack>
+
+#include "itemcommand.h"
+
 #include "treemodel.h"
 
 QT_BEGIN_NAMESPACE
@@ -37,9 +41,10 @@ private slots:
 
 private:
     void setActionsEnabled(bool isEnabled);
-    TreeModel *makeNewModel();
 
     TreeModel *getCurrentTreeModel() const;
+
+    QUndoStack *undoStack;
 
     Ui::MainWindow *ui;
 };

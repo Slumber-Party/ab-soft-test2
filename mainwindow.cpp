@@ -7,11 +7,25 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    makeNewModel();
+    undoStack = new QUndoStack();
+    undoStack->setUndoLimit(64);
+    QAction *redo = undoStack->createRedoAction(ui->edit_menu,"Повторить действие");
+    QAction *undo = undoStack->createUndoAction(ui->edit_menu,"Отменить действие");
+
+    for(auto action : ui->edit_menu->actions())
+    {
+        if(action->text() == "Повторить действие" || action->text() == "Отменить действие")
+        {
+            ui->edit_menu->removeAction(action);
+        }
+    }
+
+    ui->edit_menu->addActions({redo,undo});
 }
 
 MainWindow::~MainWindow()
 {
+    delete undoStack;
     delete ui;
 }
 
@@ -42,7 +56,8 @@ void MainWindow::on_Open_triggered()
         delete model;
     }
 
-    model = makeNewModel();
+    undoStack->setClean();
+    model = new TreeModel({"Наименование подразделения","Количество сотрудников","Средняя зарплата","",""});
 
     if(model->setupFromXML(fileName))
     {
@@ -70,6 +85,8 @@ void MainWindow::on_Save_triggered()
     {
         QMessageBox::warning(this,"Error", "Can't save the model");
     }
+
+    undoStack->setClean();
 }
 
 void MainWindow::on_Save_As_triggered()
@@ -83,15 +100,19 @@ void MainWindow::on_Save_As_triggered()
         QMessageBox::warning(this,"Error", "Can't save the model");
     }
 
+    undoStack->setClean();
 }
 
 void MainWindow::on_addDepartment_triggered()
 {
     TreeModel *model = getCurrentTreeModel();
-    if(!model->insertRows(0,1,model->parent(model->index(0,0))))
-    {
-        QMessageBox::warning(this,"Ошибка","Не удалось добавить департамент");
-    }
+
+    undoStack->push(new ItemCommand(0,1,model->parent(model->index(0,0)),model,false));
+
+//    if(!model->insertRows(0,1,model->parent(model->index(0,0))))
+//    {
+//        QMessageBox::warning(this,"Ошибка","Не удалось добавить департамент");
+//    }
 }
 
 void MainWindow::on_deleteDepartment_triggered()
@@ -104,10 +125,11 @@ void MainWindow::on_deleteDepartment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
-    {
-        QMessageBox::warning(this,"Ошибка","Не удалось удалить департамент");
-    }
+    undoStack->push(new ItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model,true));
+//    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
+//    {
+//        QMessageBox::warning(this,"Ошибка","Не удалось удалить департамент");
+//    }
 }
 
 void MainWindow::on_addEmployment_triggered()
@@ -121,10 +143,11 @@ void MainWindow::on_addEmployment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    if(!model->insertRows(1,1,selectedIndex))
-    {
-        QMessageBox::warning(this,"Ошибка","Не удалось добавить сотрудника");
-    }
+    undoStack->push(new ItemCommand(1,1,selectedIndex,model,false));
+//    if(!model->insertRows(1,1,selectedIndex))
+//    {
+//        QMessageBox::warning(this,"Ошибка","Не удалось добавить сотрудника");
+//    }
 }
 
 void MainWindow::on_deleteEmployment_triggered()
@@ -139,10 +162,11 @@ void MainWindow::on_deleteEmployment_triggered()
     }
 
     TreeModel *model = getCurrentTreeModel();
-    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
-    {
-        QMessageBox::warning(this,"Ошибка","Не удалось удалить сотрудника");
-    }
+    undoStack->push(new ItemCommand(selectedIndex.row(),1,selectedIndex.parent(),model,true));
+//    if(!model->removeRows(selectedIndex.row(),1,selectedIndex.parent()))
+//    {
+//        QMessageBox::warning(this,"Ошибка","Не удалось удалить сотрудника");
+//    }
 }
 
 void MainWindow::setActionsEnabled(bool isEnabled)
@@ -158,26 +182,4 @@ void MainWindow::setActionsEnabled(bool isEnabled)
 TreeModel *MainWindow::getCurrentTreeModel() const
 {
     return dynamic_cast<TreeModel*>(ui->treeView->model());
-}
-
-TreeModel *MainWindow::makeNewModel()
-{
-    TreeModel *model = new TreeModel({"Наименование подразделения","Количество сотрудников","Средняя зарплата","",""});
-
-    QAction *redo = model->undoStack()->createRedoAction(ui->edit_menu);
-    redo->setText("Повторить действие");
-    QAction *undo = model->undoStack()->createUndoAction(ui->edit_menu);
-    undo->setText("Отменить действие");
-
-    for(auto action : ui->edit_menu->actions())
-    {
-        if(action->text() == "Повторить действие" || action->text() == "Отменить действие")
-        {
-            ui->edit_menu->removeAction(action);
-        }
-    }
-
-    ui->edit_menu->addActions({redo,undo});
-
-    return model;
 }
