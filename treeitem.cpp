@@ -1,5 +1,4 @@
 #include "treeitem.h"
-#include <qdebug.h>
 
 TreeItem::TreeItem(const QVector<QVariant> &data, TreeItem *parent)
     : itemData(data),

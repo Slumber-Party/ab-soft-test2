@@ -1,5 +1,4 @@
 #include "treemodel.h"
-#include <qdebug.h>
 
 TreeModel::TreeModel(const QStringList &headers, QObject *parent)
     : QAbstractItemModel(parent)
@@ -103,9 +102,6 @@ QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent) con
     TreeItem *parentItem = getItem(parent);
     if (!parentItem)
         return QModelIndex();
-
-//    if(parent.isValid() && row == 0)
-//        return createIndex(row,column,new TreeItem({"Фамилия","Имя","Отчество","Должность","Зарплата"},parentItem));
 
     TreeItem *childItem = parentItem->child(row);
     if (childItem)
@@ -381,9 +377,6 @@ bool TreeModel::changeData(const QModelIndex &index, const QVariant &value, int 
         }
 
         salarySum-=item->data(4).toInt();
-
-        qDebug() << salarySum << "+" << value.toInt() << "=" << (salarySum + value.toInt()) << "/"
-                 << parent->childCount()-1 << " = " << (salarySum + value.toInt())/(parent->childCount()-1);
 
         bool result = parent->setData(2,(double)((salarySum + value.toInt())/(parent->childCount()-1)));
 

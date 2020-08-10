@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "qdebug.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -143,7 +142,6 @@ void MainWindow::on_deleteEmployment_triggered()
 {
     QModelIndex selectedIndex = ui->treeView->currentIndex();
 
-    qDebug() << selectedIndex.isValid() << " " << selectedIndex.parent().isValid() << " " << selectedIndex.parent().parent().isValid();
     if(!selectedIndex.isValid() || !(selectedIndex.parent().isValid() && !selectedIndex.parent().parent().isValid()))
     {
         QMessageBox::warning(this,"Ошибка","Выберите сотрудника для удаления");

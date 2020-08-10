@@ -24,7 +24,7 @@ DeleteItemCommand::DeleteItemCommand(int position, int rows, const QModelIndex &
 
     for(int i = 1; i<itemToDelete->childCount();i++)
     {
-        children[i] = *itemToDelete->child(i);
+        children[i] = *itemToDelete->child(i); // сохраняем все подэлементы
     }
 }
 
@@ -35,7 +35,7 @@ void DeleteItemCommand::undo()
     else
         model_->insertRows(row,rows_,model_->index(p_row,p_column));
 
-    if(children.isEmpty())
+    if(children.isEmpty()) //если true -> восстанавливаем employment, если нет - department
     {
         for(int i =0; i< oldParentData.size();i++)
         {
